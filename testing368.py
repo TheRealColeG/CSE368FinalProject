@@ -5,4 +5,9 @@ import matplotlib.pyplot as ppl
 from sklearn.linear_model import LinearRegression
 
 if __name__ == "__main__":
-    print("hello!")
+
+    train = pd.read_csv("CSE368FinalProject/train.csv")
+
+    fields = list(train.columns)
+
+    print(fields)
