@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as ppl
 from sklearn.linear_model import LinearRegression
+import random
 
 if __name__ == "__main__":
 
@@ -26,10 +27,11 @@ if __name__ == "__main__":
     [80]   : SalePrice
     """
 
-    train = pd.read_csv("CSE368FinalProject/train.csv")
-    print(len(train))
+    train = pd.read_csv("train.csv")
 
-    difference = 0
+    MAE = 0
+    MSE = 0
+
     
     for house in train.values:
 
@@ -39,80 +41,89 @@ if __name__ == "__main__":
         GrLivArea [46], *COMBINE* BsmtFullBath + BsmtHalfBath + FullBath + HalfBath [47-50]
         BedroomAbvGr [51], KitchenAbvGr [52], Functional [55], GarageCars [61], MiscVal [75]
         YrSold [77], SaleCondition [79]"""
-        
-        projectedCost = 0
 
-        subClass = house[1]
-        match subClass:
-            case 20: projectedCost = 200000
-            case 30: projectedCost = 100000
-            case 40: projectedCost = 150000
-            case 45: projectedCost = 125000
-            case 50: projectedCost = 175000
-            case 60: projectedCost = 200000
-            case 70: projectedCost = 150000
-            case 75: projectedCost = 225000
-            case 80: projectedCost = 125000
-            case 85: projectedCost = 75000
-            case 90: projectedCost = 70000
-            case 120: projectedCost = 175000
-            case 150: projectedCost = 200000
-            case 160: projectedCost = 210000
-            case 180: projectedCost = 180000
-            case 190: projectedCost = 200000
+        projectedCost = 90000
 
         listy = list()
         lotArea = int(house[4])
         projectedCost += int(lotArea * 0.3)
 
-        projectedCost += (int(house[17]) - 5) * 5000
-        projectedCost += (int(house[18]) - 5) * 5000
+        #overall quality, overall condition
+        y = 5 #5
+        x = 6000 #6000
+        projectedCost += (int(house[17]) - y) * x
+        projectedCost += (int(house[18]) - y) * x
 
-        projectedCost += ((int(house[19])) - 1980) * 2000
+        #Year Built
+        y = 1975 #1975
+        x = 1000 #1000
+        projectedCost += ((int(house[19])) - y) * x
         
         exterqual = house[27]
+        x = 1.4
         match exterqual:
-            case "Ex": projectedCost += 20000
-            case "Gd": projectedCost += 10000
+            case "Ex": projectedCost += 75000*x
+            case "Gd": projectedCost += 0
             case "TA": projectedCost += 0
-            case "Fa": projectedCost += -10000
-            case "Po": projectedCost += -20000
+            case "Fa": projectedCost += -10000*x
+            case "Po": projectedCost += -20000*x
 
-        extercond = house[28]
-        match extercond:
-            case "Ex": projectedCost += 20000
-            case "Gd": projectedCost += 10000
-            case "TA": projectedCost += 0
-            case "Fa": projectedCost += -10000
-            case "Po": projectedCost += -20000
+        #Central Air
+        x = 10000 #7500
+        if (house[41] == "N"):
+            projectedCost -= x
 
-        if (house[41] == "Y"):
-            projectedCost += 2500
+        #sq. ft. above ground
+        x=7500
+        y=2
+        if (house[46] < 1300): projectedCost -= x
+        elif (2000 < house[46] > 1300): projectedCost += x*y
+        else : projectedCost += x*(y**2)
 
-        if (house[46] < 1300): projectedCost -= 15000
-        elif (2000 < house[46] > 1300): projectedCost += 10000
-        else : projectedCost += 20000
+        #All baths
+        x = 5000 #5000
+        y = 1 #3
+        projectedCost += ((house[47]+house[48]+house[49]+house[50])-y)*x
 
-        projectedCost += ((house[47]+house[48]+house[49]+house[50])-3)*5000
-        projectedCost += (house[51]-3)*5000
+        #Bedrooms abv ground
+        x = 10000 #10000
+        y = 3 #3
+        projectedCost += (house[51] - y)*x
 
-        projectedCost += (house[52] - 1)*10000
+        #Kitchens abv ground
+        x = 15000 #15000
+        projectedCost += (house[52])*x
 
-        functionalList = ["Typ","Min1","Min2","Mod","Maj1","Maj2","Sev","Sal"]
+        """ functionalList = ["Typ","Min1","Min2","Mod","Maj1","Maj2","Sev","Sal"]
         howbad = functionalList.index(house[55])
-        projectedCost -= howbad * 5000
+        x = 0 #1000
+        projectedCost -= howbad * x"""
 
-        projectedCost += (house[61]-2)*5000
+        """
+        #Cars that can fit in garage
+        x = 0 #10000
+        y = 0 #2
+        projectedCost += (house[61] - y)*x
+        """
 
-        projectedCost += house[75]*10
+        #Misc Val?
+        y = 2 #2
+        projectedCost += house[75]*y
 
-        projectedCost += (house[77]-2000)*50
+        #Year Sold
+        x = 6000 #6000
+        y = 2000 #2000
+        projectedCost += (house[77] - y)*x
 
         actualCost = int(house[80])
-        print(actualCost - projectedCost)
-        difference += actualCost-projectedCost
+        if (actualCost > 450000):
+            pass
+            print(actualCost, ":", projectedCost)
+        else:
+            MAE += abs(actualCost-projectedCost)
+            MSE += (actualCost-projectedCost)**2
 
-    print(difference / len(train))
-    
+    print("MAE: ","{:,}".format(math.trunc(MAE / len(train))))
+    print("MSE: ","{:,}".format(math.trunc(MSE / len(train))))
 
     fields = list(train.columns)
